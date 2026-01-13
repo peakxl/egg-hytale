@@ -17,11 +17,23 @@ echo "Detected architecture: $ARCH"
 # Set up downloader command based on architecture
 if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
     echo "ARM64 system detected, using QEMU for x86_64 emulation"
-    # Check if QEMU is available
+
+    # Check if QEMU is available, install if missing
     if ! command -v qemu-x86_64-static &> /dev/null; then
-        echo "Error: QEMU not found. Please reinstall the server."
-        exit 1
+        echo "QEMU not found, installing..."
+        apt update
+        apt install -y qemu-user-static binfmt-support
+
+        if [ $? -ne 0 ]; then
+            echo "Error: Failed to install QEMU"
+            exit 1
+        fi
+
+        echo "✓ QEMU installed successfully"
+    else
+        echo "✓ QEMU is already installed"
     fi
+
     DOWNLOADER="qemu-x86_64-static ./hytale-downloader-linux-amd64"
 else
     echo "x86_64 system detected, running natively"
