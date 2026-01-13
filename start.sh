@@ -10,7 +10,24 @@
 # Pelican or Pterodactyl panel instead.
 ################################################################################
 
-DOWNLOADER="./hytale-downloader-linux-amd64"
+# Detect system architecture
+ARCH=$(uname -m)
+echo "Detected architecture: $ARCH"
+
+# Set up downloader command based on architecture
+if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
+    echo "ARM64 system detected, using QEMU for x86_64 emulation"
+    # Check if QEMU is available
+    if ! command -v qemu-x86_64-static &> /dev/null; then
+        echo "Error: QEMU not found. Please reinstall the server."
+        exit 1
+    fi
+    DOWNLOADER="qemu-x86_64-static ./hytale-downloader-linux-amd64"
+else
+    echo "x86_64 system detected, running natively"
+    DOWNLOADER="./hytale-downloader-linux-amd64"
+fi
+
 AUTH_CACHE_FILE=".hytale-auth-tokens.json"
 
 # Function to extract downloaded server files
@@ -276,16 +293,16 @@ perform_authentication() {
 }
 
 # Check if the downloader exists
-if [ ! -f "$DOWNLOADER" ]; then
+if [ ! -f "./hytale-downloader-linux-amd64" ]; then
     echo "Error: Hytale downloader not found!"
     echo "Please run the installation script first."
     exit 1
 fi
 
 # Check if the downloader is executable
-if [ ! -x "$DOWNLOADER" ]; then
+if [ ! -x "./hytale-downloader-linux-amd64" ]; then
     echo "Setting executable permissions..."
-    chmod +x "$DOWNLOADER"
+    chmod +x "./hytale-downloader-linux-amd64"
 fi
 
 # Check if credentials file exists, if not run the updater
